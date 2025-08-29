@@ -1,5 +1,6 @@
 // background.js - De Worker
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log('Background.js: Received message:', request);
   // Luister naar berichten van de webapplicatie
   if (request.type === 'GET_EVENT_DATA' && request.eventUrl) {
     // Bestaande logica voor het ophalen van event data
@@ -9,8 +10,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       try {
         const cookies = await chrome.cookies.getAll({ domain: ".ticketmaster.nl" });
         const cookieString = cookies.map(c => `${c.name}=${c.value}`).join('; ');
-        if (cookieString.length < 200) throw new Error("Onvolledige cookie ontvangen. Anti-bot is mogelijk actief.");
+
         sendResponse({ success: true, cookieString });
+        console.log('Background.js: Sending TM_COOKIE_RESPONSE with success.');
       } catch (error) {
         sendResponse({ success: false, error: error.message });
       }

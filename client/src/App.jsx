@@ -111,6 +111,7 @@ function App() {
 
   useEffect(() => {
     const handleMessage = (event) => {
+      console.log('App.jsx: Received message from extension:', event.data);
       if (event.source !== window || event.data.source !== 'ticketmaster-extension') {
         return;
       }
@@ -153,7 +154,7 @@ function App() {
     cookiePromiseRef.current.resolve = resolveCookiePromise;
     cookiePromiseRef.current.reject = rejectCookiePromise;
 
-    // Request cookie from content script
+    console.log('App.jsx: Sending GET_TM_COOKIE message to extension...');
     window.postMessage({ type: 'GET_TM_COOKIE', source: 'ticketmaster-dashboard' }, '*');
 
     let cookie;
