@@ -98,8 +98,6 @@ function ThemeToggle({ theme, toggleTheme }) {
 }
 
 function App() {
-  const EXTENSION_ID = 'fnkklcbipplidfliidenikiblcnbdffj'; // VERVANG DIT MET DE ECHTE EXTENSIE ID
-
   const [eventUrl, setEventUrl] = useState('')
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(false)
@@ -109,7 +107,30 @@ function App() {
     return savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
   })
 
-  
+  const cookiePromiseRef = useRef(null); // To store the promise for cookie retrieval
+
+  useEffect(() => {
+    const handleMessage = (event) => {
+      if (event.source !== window || event.data.source !== 'ticketmaster-extension') {
+        return;
+      }
+      if (event.data.type === 'TM_COOKIE_RESPONSE') {
+        if (cookiePromiseRef.current) {
+          if (event.data.success) {
+            cookiePromiseRef.current.resolve(event.data.cookieString);
+          } else {
+            cookiePromiseRef.current.reject(new Error(event.data.error || 'Kon cookie niet ophalen via extensie.'));
+          }
+          cookiePromiseRef.current = null; // Clear the ref after resolution
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, []);
 
   const toggleTheme = useCallback(() => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light')
@@ -119,21 +140,31 @@ function App() {
     e.preventDefault()
     if (!eventUrl) return
     
+    setLoading(true)
+    setError('')
+
+    // Create a new promise for this request
+    let resolveCookiePromise;
+    let rejectCookiePromise;
+    cookiePromiseRef.current = new Promise((resolve, reject) => {
+      resolveCookiePromise = resolve;
+      rejectCookiePromise = reject;
+    });
+    cookiePromiseRef.current.resolve = resolveCookiePromise;
+    cookiePromiseRef.current.reject = rejectCookiePromise;
+
+    // Request cookie from content script
+    window.postMessage({ type: 'GET_TM_COOKIE', source: 'ticketmaster-dashboard' }, '*');
+
     let cookie;
     try {
-      const response = await chrome.runtime.sendMessage(EXTENSION_ID, { type: 'GET_TM_COOKIE' });
-      if (response && response.success) {
-        cookie = response.cookieString;
-      } else {
-        throw new Error(response.error || 'Kon cookie niet ophalen via extensie.');
-      }
+      cookie = await cookiePromiseRef.current;
     } catch (e) {
       setError(`Fout bij communicatie met extensie: ${e.message}`);
+      setLoading(false);
       return;
     }
 
-    setLoading(true)
-    setError('')
     try {
       const res = await fetch('/api/get-event-data', {
         method: 'POST',

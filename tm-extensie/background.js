@@ -1,5 +1,5 @@
 // background.js - De Worker
-chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Luister naar berichten van de webapplicatie
   if (request.type === 'GET_EVENT_DATA' && request.eventUrl) {
     // Bestaande logica voor het ophalen van event data

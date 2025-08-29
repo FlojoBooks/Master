@@ -13,6 +13,13 @@
   "background": {
     "service_worker": "background.js"
   },
+  "content_scripts": [
+    {
+      "matches": ["*://*.ticketmaster.nl/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
   "externally_connectable": {
     "matches": [
       "http://localhost:3000/*"
