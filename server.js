@@ -13,6 +13,11 @@ app.use(express.json());
 // Serve the React build (if present)
 app.use(express.static(path.join(__dirname, 'client', 'dist')));
 
+// Health check endpoint for container orchestration
+app.get('/healthz', (req, res) => {
+    res.status(200).send('OK');
+});
+
 app.post('/api/get-event-data', async (req, res) => {
     const { eventUrl } = req.body;
     if (!eventUrl) {
