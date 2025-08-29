@@ -1,5 +1,4 @@
 // app.js (Versie 5.0: "Multi-Event Dashboard")
-const EXTENSION_ID = "HIER_KOMT_JOUW_EXTENSIE_ID"; // Placeholder for your extension ID
 document.addEventListener('DOMContentLoaded', () => {
     const eventForm = document.getElementById('event-form');
     const urlInput = document.getElementById('event-url-input');
@@ -16,28 +15,25 @@ document.addEventListener('DOMContentLoaded', () => {
         statusMessageDiv.innerHTML = '<p>Data wordt opgehaald. Dit kan 15-20 seconden duren...</p>';
 
         try {
-            chrome.runtime.sendMessage(EXTENSION_ID, { type: 'GET_EVENT_DATA', eventUrl: eventUrl },
-                function(response) {
-                    if (chrome.runtime.lastError) {
-                        statusMessageDiv.innerHTML = `<p class="error">Fout: Kan geen verbinding maken met de extensie. Zorg ervoor dat de extensie is geïnstalleerd en ingeschakeld.</p>`;
-                        console.error("Extension connection error:", chrome.runtime.lastError.message);
-                        submitButton.disabled = false;
-                        submitButton.textContent = 'Voeg Evenement Toe';
-                        return;
-                    }
+            const response = await fetch('/api/get-event-data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ eventUrl })
+            });
 
-                    if (response.success) {
-                        statusMessageDiv.innerHTML = '';
-                        createEventBlock(response.data, eventUrl);
-                        urlInput.value = '';
-                    } else {
-                        console.error("Fout van extensie:", response.error);
-                        statusMessageDiv.innerHTML = `<p class="error">Fout: ${response.error}</p>`;
-                    }
-                    submitButton.disabled = false;
-                    submitButton.textContent = 'Voeg Evenement Toe';
-                }
-            );
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.details || `Serverfout: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            statusMessageDiv.innerHTML = '';
+            
+            // Creëer en voeg een nieuw blok toe voor dit evenement
+            createEventBlock(data, eventUrl);
+            
+            // Maak het input veld leeg voor de volgende URL
+            urlInput.value = '';
 
         } catch (error) {
             console.error("Fout:", error);

@@ -1,0 +1,6 @@
+feat: Rewrite frontend logic in app.js
+
+Replaces the backend API call with communication to the Chrome extension using `chrome.runtime.sendMessage()`.
+Adds `EXTENSION_ID` constant for extension communication.
+Implements error handling for extension connection issues (`chrome.runtime.lastError`) and extension-specific errors (`response.error`).
+Updates event data processing to use the response from the extension.
