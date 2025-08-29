@@ -107,31 +107,9 @@ function App() {
     return savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
   })
 
-  const cookiePromiseRef = useRef(null); // To store the promise for cookie retrieval
+  
 
-  useEffect(() => {
-    const handleMessage = (event) => {
-      console.log('App.jsx: Received message from extension:', event.data);
-      if (event.source !== window || event.data.source !== 'ticketmaster-extension') {
-        return;
-      }
-      if (event.data.type === 'TM_COOKIE_RESPONSE') {
-        if (cookiePromiseRef.current) {
-          if (event.data.success) {
-            cookiePromiseRef.current.resolve(event.data.cookieString);
-          } else {
-            cookiePromiseRef.current.reject(new Error(event.data.error || 'Kon cookie niet ophalen via extensie.'));
-          }
-          cookiePromiseRef.current = null; // Clear the ref after resolution
-        }
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => {
-      window.removeEventListener('message', handleMessage);
-    };
-  }, []);
+  
 
   const toggleTheme = useCallback(() => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light')
@@ -144,22 +122,14 @@ function App() {
     setLoading(true)
     setError('')
 
-    // Create a new promise for this request
-    let resolveCookiePromise;
-    let rejectCookiePromise;
-    cookiePromiseRef.current = new Promise((resolve, reject) => {
-      resolveCookiePromise = resolve;
-      rejectCookiePromise = reject;
-    });
-    cookiePromiseRef.current.resolve = resolveCookiePromise;
-    cookiePromiseRef.current.reject = rejectCookiePromise;
-
     console.log('App.jsx: Sending GET_TM_COOKIE message to extension...');
-    window.postMessage({ type: 'GET_TM_COOKIE', source: 'ticketmaster-dashboard' }, '*');
-
-    let cookie;
     try {
-      cookie = await cookiePromiseRef.current;
+      const response = await chrome.runtime.sendMessage('fnkklcbipplidfliidenikiblcnbdffj', { type: 'GET_TM_COOKIE', source: 'ticketmaster-dashboard' });
+      if (response.success) {
+        cookie = response.cookieString;
+      } else {
+        throw new Error(response.error || 'Kon cookie niet ophalen via extensie.');
+      }
     } catch (e) {
       setError(`Fout bij communicatie met extensie: ${e.message}`);
       setLoading(false);
