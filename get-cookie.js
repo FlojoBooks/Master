@@ -3,8 +3,8 @@ const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
 
-// URL to a popular event to initialize a session
-const eventUrl = 'https://www.ticketmaster.nl/artist/anouk-tickets/886046';
+// URL to the API endpoint to initialize a session
+const apiUrl = 'https://availability.ticketmaster.nl/api/v2/TM_NL/availability/1801698178?subChannelId=1';
 
 (async () => {
     let browser = null;
@@ -19,9 +19,9 @@ const eventUrl = 'https://www.ticketmaster.nl/artist/anouk-tickets/886046';
         const page = await browser.newPage();
         await page.setViewport({ width: 1920, height: 1080 });
 
-        console.error(`Stap 2: Navigeren naar: ${eventUrl}`);
+        console.error(`Stap 2: Navigeren naar: ${apiUrl}`);
         console.error('Dit kan even duren...');
-        await page.goto(eventUrl, { waitUntil: 'networkidle2' });
+        await page.goto(apiUrl, { waitUntil: 'networkidle2' });
 
         console.error('Stap 3: Cookie ophalen...');
         const cookies = await page.cookies();
@@ -33,7 +33,7 @@ const eventUrl = 'https://www.ticketmaster.nl/artist/anouk-tickets/886046';
 
         console.error('Stap 4: Cookie succesvol opgehaald!');
         console.error('---');
-        console.error('Kopieer de onderstaande cookie-string en voeg deze toe aan uw .env bestand als TM_COOKIE');
+        console.error('Kopieer de onderstaande cookie-string en plak deze in het invoerveld van de applicatie.');
         console.error('---');
         
         // The final cookie string is printed to standard output
