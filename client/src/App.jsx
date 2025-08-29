@@ -98,6 +98,17 @@ function ThemeToggle({ theme, toggleTheme }) {
 }
 
 function App() {
+  const [cookieInput, setCookieInput] = useState('');
+
+  const saveCookie = () => {
+    if (cookieInput) {
+      sessionStorage.setItem('TM_COOKIE', cookieInput);
+      alert('Cookie opgeslagen in sessie!');
+    } else {
+      alert('Voer eerst een cookie in.');
+    }
+  };
+
   const [eventUrl, setEventUrl] = useState('')
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(false)
@@ -108,6 +119,12 @@ function App() {
   })
 
   useEffect(() => {
+    // On component mount, load the cookie from session storage into the input
+    const savedCookie = sessionStorage.getItem('TM_COOKIE');
+    if (savedCookie) {
+      setCookieInput(savedCookie);
+    }
+
     document.documentElement.setAttribute('data-theme', theme)
     localStorage.setItem('theme', theme)
   }, [theme])
@@ -119,13 +136,20 @@ function App() {
   const onSubmit = useCallback(async (e) => {
     e.preventDefault()
     if (!eventUrl) return
+    
+    const cookie = sessionStorage.getItem('TM_COOKIE');
+    if (!cookie) {
+      setError('Cookie niet gevonden. Sla eerst een cookie op via het invoerveld.');
+      return;
+    }
+
     setLoading(true)
     setError('')
     try {
       const res = await fetch('/api/get-event-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventUrl })
+        body: JSON.stringify({ eventUrl, cookie })
       })
       if (!res.ok) {
         const err = await res.json().catch(() => null)
@@ -147,7 +171,22 @@ function App() {
       <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
       <h1>Multi-Event Dashboard</h1>
 
+      <div className="input-container" style={{ marginBottom: '2rem' }}>
+        <h3>Ticketmaster Cookie</h3>
+        <textarea
+          placeholder="Plak hier de volledige cookie-string..."
+          value={cookieInput}
+          onChange={(e) => setCookieInput(e.target.value)}
+          rows={4}
+          style={{ width: '100%', marginBottom: '10px' }}
+        />
+        <button onClick={saveCookie}>
+          Cookie Opslaan (voor deze sessie)
+        </button>
+      </div>
+
       <div className="input-container">
+        <h3>Nieuw Evenement</h3>
         <form onSubmit={onSubmit} id="event-form">
           <input
             type="url"
