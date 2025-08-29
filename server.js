@@ -14,10 +14,17 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'client', 'dist')));
 
 app.post('/api/get-event-data', async (req, res) => {
-    const { eventId, cookieString, eventUrl } = req.body; // eventUrl is still useful for Referer header
+    const { eventUrl, cookieString } = req.body;
 
-    if (!eventId || !cookieString) {
-        return res.status(400).json({ error: 'Event ID and cookie string are required.' });
+    if (!eventUrl || !cookieString) {
+        return res.status(400).json({ error: 'Event URL and cookie string are required.' });
+    }
+
+    const eventIdMatch = eventUrl.match(/(\d+)(?!.*\d)/);
+    const eventId = eventIdMatch ? eventIdMatch[0] : null;
+
+    if (!eventId) {
+        return res.status(400).json({ error: 'Could not extract Event ID from the provided URL.' });
     }
 
     try {
