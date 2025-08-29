@@ -1,19 +1,17 @@
-// server.js (Versie 11: "Hybrid Method - Fast ID & Cookie Fetch")
+// server.js (v12: Static Cookie from Env)
 const express = require('express');
 const path = require('path');
-const puppeteer = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-puppeteer.use(StealthPlugin());
 const fetch = require('node-fetch');
 
 const app = express();
 const port = process.env.PORT || 3000;
+const host = '0.0.0.0';
 
 app.use(express.json());
-// Serve the React build (if present)
+// Serve the React build
 app.use(express.static(path.join(__dirname, 'client', 'dist')));
 
-// Health check endpoint for container orchestration
+// Health check endpoint
 app.get('/healthz', (req, res) => {
     res.status(200).send('OK');
 });
@@ -24,9 +22,8 @@ app.post('/api/get-event-data', async (req, res) => {
         return res.status(400).json({ error: 'Event URL is verplicht.' });
     }
 
-    let browser = null;
     try {
-        // Stap 1: Haal de Event ID direct uit de URL. (SNEL)
+        // Step 1: Get Event ID from URL
         const match = eventUrl.match(/(\d+)(?!.*\d)/);
         if (!match || !match[0]) {
             throw new Error('Kon geen geldige Event ID (nummer) vinden in de URL.');
@@ -34,39 +31,24 @@ app.post('/api/get-event-data', async (req, res) => {
         const eventId = match[0];
         console.log(`Stap 1: Event ID gevonden: ${eventId}`);
 
-        // Stap 2: Start een headless browser om een geldige cookie te krijgen. (NODIG VOOR 403-FOUT)
-        console.log("Stap 2: Bezig met starten van headless browser om cookie op te halen...");
-        browser = await puppeteer.launch({
-			headless: true,
-			args: ['--no-sandbox', '--disable-setuid-sandbox'],
-			executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined
-		});
-        const page = await browser.newPage();
-        await page.setViewport({ width: 1920, height: 1080 });
-
-        // Navigeer naar de pagina om de sessie te initialiseren
-        await page.goto(eventUrl, { waitUntil: 'networkidle2' });
-        
-        // Haal de cookies op nadat de pagina volledig is geladen
-        const cookies = await page.cookies();
-        const cookieString = cookies.map(c => `${c.name}=${c.value}`).join('; ');
-        
-        if (cookieString.length < 200) {
-            // Veiligheidscheck: als de cookie te kort is, is het waarschijnlijk misgegaan.
-            throw new Error(`Onvolledige cookie ontvangen (lengte: ${cookieString.length}). Anti-bot mogelijk actief.`);
+        // Step 2: Get cookie from environment variable
+        const cookie = process.env.TM_COOKIE;
+        if (!cookie) {
+            console.error('Fout: TM_COOKIE omgevingsvariabele is niet ingesteld.');
+            throw new Error('Serverconfiguratiefout: TM_COOKIE is niet ingesteld.');
         }
-        console.log(`Stap 2: Succesvol een geldige cookie verkregen (lengte: ${cookieString.length}).`);
+        console.log('Stap 2: Cookie succesvol geladen uit omgevingsvariabele.');
 
-        // Stap 3: Bouw de API URL met de ID.
+        // Step 3: Build API URL
         const apiUrl = `https://availability.ticketmaster.nl/api/v2/TM_NL/availability/${eventId}?subChannelId=1`;
 
-        // Stap 4: Doe het API-verzoek met de verkregen cookie.
+        // Step 4: Make API request with the cookie
         console.log("Stap 3: Bezig met API-verzoek inclusief cookie...");
         const apiResponse = await fetch(apiUrl, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
                 'Referer': eventUrl,
-                'Cookie': cookieString,
+                'Cookie': cookie,
             }
         });
 
@@ -80,11 +62,11 @@ app.post('/api/get-event-data', async (req, res) => {
 
     } catch (error) {
         console.error("Fout in backend:", error.message);
-        res.status(500).json({ error: 'Er is een fout opgetreden aan de serverkant.', details: error.message });
-    } finally {
-        if (browser) {
-            await browser.close();
+        // Provide a clearer error message to the client for the specific cookie issue
+        if (error.message.includes('TM_COOKIE')) {
+            return res.status(500).json({ error: 'Serverconfiguratiefout.', details: 'De server is niet correct geconfigureerd.' });
         }
+        res.status(500).json({ error: 'Er is een fout opgetreden aan de serverkant.', details: error.message });
     }
 });
 
@@ -97,6 +79,6 @@ app.use((req, res, next) => {
 	}
 });
 
-app.listen(port, () => {
-	console.log(`Server draait op http://localhost:${port}`);
+app.listen(port, host, () => {
+	console.log(`Server draait op http://${host}:${port}`);
 });

@@ -16,10 +16,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^5.1.0",
-    "node-fetch": "^2.7.0",
-    "puppeteer": "^24.17.1",
-    "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2"
+    "node-fetch": "^2.7.0"
   },
   "devDependencies": {
     "concurrently": "^9.0.1",
