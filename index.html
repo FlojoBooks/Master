@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Event Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 0; background-color: #f0f2f5; color: #333; }
+        .dashboard-container { max-width: 1200px; margin: auto; padding: 20px; }
+        h1 { text-align: center; color: #1a202c; }
+        .input-container { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        form { display: flex; gap: 10px; }
+        input[type="url"] { flex-grow: 1; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+        button { padding: 12px 20px; border: none; background-color: #007bff; color: white; border-radius: 5px; font-size: 16px; cursor: pointer; transition: background-color 0.2s; }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        #status-message { text-align: center; margin: 20px 0; font-size: 1.1em; }
+        .error { color: #e53e3e; background-color: #fff5f5; border: 1px solid #fc8181; padding: 15px; border-radius: 8px; }
+
+        /* Container voor alle event blokken */
+        #events-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+            gap: 20px;
+        }
+
+        /* Styling voor een individueel event blok */
+        .event-block {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            opacity: 0; /* Begin onzichtbaar voor animatie */
+            animation: fadeIn 0.5s forwards;
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        .event-block h2 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .summary-box { background-color: #f7fafc; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 20px; border-radius: 8px; }
+        .chart-box { padding-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <h1>Multi-Event Dashboard</h1>
+
+        <div class="input-container">
+            <form id="event-form">
+                <input type="url" id="event-url-input" placeholder="https://www.ticketmaster.nl/event/..." required>
+                <button type="submit" id="submit-button">Voeg Evenement Toe</button>
+            </form>
+        </div>
+        
+        <div id="status-message"></div>
+
+        <!-- NIEUW: Lege container voor de resultaten -->
+        <div id="events-container"></div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
