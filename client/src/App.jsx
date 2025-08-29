@@ -98,16 +98,7 @@ function ThemeToggle({ theme, toggleTheme }) {
 }
 
 function App() {
-  const [cookieInput, setCookieInput] = useState('');
-
-  const saveCookie = () => {
-    if (cookieInput) {
-      sessionStorage.setItem('TM_COOKIE', cookieInput);
-      alert('Cookie opgeslagen in sessie!');
-    } else {
-      alert('Voer eerst een cookie in.');
-    }
-  };
+  const EXTENSION_ID = 'fnkklcbipplidfliidenikiblcnbdffj'; // VERVANG DIT MET DE ECHTE EXTENSIE ID
 
   const [eventUrl, setEventUrl] = useState('')
   const [events, setEvents] = useState([])
@@ -118,16 +109,7 @@ function App() {
     return savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
   })
 
-  useEffect(() => {
-    // On component mount, load the cookie from session storage into the input
-    const savedCookie = sessionStorage.getItem('TM_COOKIE');
-    if (savedCookie) {
-      setCookieInput(savedCookie);
-    }
-
-    document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem('theme', theme)
-  }, [theme])
+  
 
   const toggleTheme = useCallback(() => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light')
@@ -137,9 +119,16 @@ function App() {
     e.preventDefault()
     if (!eventUrl) return
     
-    const cookie = sessionStorage.getItem('TM_COOKIE');
-    if (!cookie) {
-      setError('Cookie niet gevonden. Sla eerst een cookie op via het invoerveld.');
+    let cookie;
+    try {
+      const response = await chrome.runtime.sendMessage(EXTENSION_ID, { type: 'GET_TM_COOKIE' });
+      if (response && response.success) {
+        cookie = response.cookieString;
+      } else {
+        throw new Error(response.error || 'Kon cookie niet ophalen via extensie.');
+      }
+    } catch (e) {
+      setError(`Fout bij communicatie met extensie: ${e.message}`);
       return;
     }
 
@@ -171,19 +160,7 @@ function App() {
       <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
       <h1>Multi-Event Dashboard</h1>
 
-      <div className="input-container" style={{ marginBottom: '2rem' }}>
-        <h3>Ticketmaster Cookie</h3>
-        <textarea
-          placeholder="Plak hier de volledige cookie-string..."
-          value={cookieInput}
-          onChange={(e) => setCookieInput(e.target.value)}
-          rows={4}
-          style={{ width: '100%', marginBottom: '10px' }}
-        />
-        <button onClick={saveCookie}>
-          Cookie Opslaan (voor deze sessie)
-        </button>
-      </div>
+      
 
       <div className="input-container">
         <h3>Nieuw Evenement</h3>

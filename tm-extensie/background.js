@@ -1,5 +1,23 @@
 // background.js - De Worker
 chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => {
+  // Luister naar berichten van de webapplicatie
+  if (request.type === 'GET_EVENT_DATA' && request.eventUrl) {
+    // Bestaande logica voor het ophalen van event data
+    // ...
+  } else if (request.type === 'GET_TM_COOKIE') {
+    (async () => {
+      try {
+        const cookies = await chrome.cookies.getAll({ domain: ".ticketmaster.nl" });
+        const cookieString = cookies.map(c => `${c.name}=${c.value}`).join('; ');
+        if (cookieString.length < 200) throw new Error("Onvolledige cookie ontvangen. Anti-bot is mogelijk actief.");
+        sendResponse({ success: true, cookieString });
+      } catch (error) {
+        sendResponse({ success: false, error: error.message });
+      }
+    })();
+    return true; // Houdt de message port open voor het asynchrone antwoord
+  }
+
   // Luister alleen naar berichten met het type 'GET_EVENT_DATA'
   if (request.type === 'GET_EVENT_DATA' && request.eventUrl) {
     // Start het asynchrone proces en geef aan dat we later antwoorden
