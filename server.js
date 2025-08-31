@@ -40,36 +40,67 @@ app.post('/api/get-event-data', async (req, res) => {
         return res.status(400).json({ error: 'Could not extract Event ID from the provided URL.' });
     }
 
+    let browser = null;
     try {
         console.log(`Received Event ID: ${eventId}`);
-        console.log(`Received Cookie String (length): ${cookieString.length}`);
+        console.log(`Using proxy: ${PROXY_SERVER}`);
 
-        // Build the API URL with the ID.
+        // Build the API URL
         const apiUrl = `https://availability.ticketmaster.nl/api/v2/TM_NL/availability/${eventId}?subChannelId=1`;
 
-        // Make the API request with the provided cookie.
-        console.log("Making API request with provided cookie...");
-        console.log('Fetching with agent:', agent);
-        const apiResponse = await fetch(apiUrl, {
-            agent: agent, // Use the proxy agent
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
-                'Referer': eventUrl, // Use the original eventUrl as Referer
-                'Cookie': cookieString,
-            }
+        console.log("Launching Puppeteer to fetch API data...");
+        browser = await puppeteer.launch({
+            headless: true,
+            // IMPORTANT: The proxy URL must be valid for this to work.
+            args: [
+                `--proxy-server=${PROXY_SERVER}`,
+                '--no-sandbox',
+                '--disable-setuid-sandbox'
+            ]
         });
 
-        if (!apiResponse.ok) {
-            throw new Error(`Ticketmaster API responded with status ${apiResponse.status} (${apiResponse.statusText})`);
+        const page = await browser.newPage();
+
+        // Set the cookies for the .ticketmaster.nl domain
+        if (cookieString) {
+            const cookieObjects = cookieString.split(';').map(c => {
+                const [name, ...valueParts] = c.trim().split('=');
+                return { name, value: valueParts.join('='), domain: '.ticketmaster.nl' };
+            });
+            await page.setCookie(...cookieObjects);
+            console.log(`Set ${cookieObjects.length} cookies.`);
         }
 
-        const data = await apiResponse.json();
-        console.log("Successfully received data from the API!");
+        // Go to the API URL
+        console.log(`Navigating to: ${apiUrl}`);
+        const response = await page.goto(apiUrl, { waitUntil: 'networkidle0' });
+
+        if (!response.ok()) {
+             throw new Error(`Puppeteer received non-ok response: ${response.status()} ${response.statusText()}`);
+        }
+
+        // The response from the API is JSON, which the browser will display as text.
+        const jsonContent = await page.evaluate(() => document.body.innerText);
+        
+        // Check for common API error messages in the response body
+        if (jsonContent.includes('Forbidden') || jsonContent.includes('blocked')) {
+            console.error("API response indicates a block:", jsonContent);
+            throw new Error('The request was blocked by the API, likely due to fingerprinting or a bad cookie/proxy.');
+        }
+
+        const data = JSON.parse(jsonContent);
+
+        console.log("Successfully received data from the API via Puppeteer!");
         res.json(data);
 
     } catch (error) {
-        console.error("Backend error:", error.message);
-        res.status(500).json({ error: 'An error occurred on the server side.', details: error.message });
+        console.error("Backend error (Puppeteer):", error.message);
+        res.status(500).json({ error: 'An error occurred on the server side with Puppeteer.', details: error.message });
+    } finally {
+        if (browser) {
+            await browser.close();
+            console.log("Puppeteer browser closed.");
+        }
     }
 });
 
