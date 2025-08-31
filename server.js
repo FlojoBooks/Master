@@ -86,7 +86,10 @@ app.post('/api/get-event-data', async (req, res) => {
 
         // Go to the API URL
         console.log(`Navigating to: ${apiUrl}`);
-        const response = await page.goto(apiUrl, { waitUntil: 'networkidle0' });
+        const response = await page.goto(apiUrl, { 
+            waitUntil: 'domcontentloaded',
+            timeout: 60000 // Increase timeout to 60 seconds as a safeguard
+        });
 
         if (!response.ok()) {
              throw new Error(`Puppeteer received non-ok response: ${response.status()} ${response.statusText()}`);
