@@ -5,16 +5,16 @@ const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
 const fetch = require('node-fetch');
-const { HttpProxyAgent } = require('https-proxy-agent');
+const { HttpsProxyAgent } = require('https-proxy-agent');
 
 // IMPORTANT: Replace with your actual proxy URL
 const PROXY_SERVER = process.env.PROXY_SERVER || 'http://your.proxy.server:port'; 
 let agent = null;
 try {
-    agent = new HttpProxyAgent(PROXY_SERVER);
-    console.log('HttpProxyAgent created:', agent);
+    agent = new HttpsProxyAgent(PROXY_SERVER);
+    console.log('HttpsProxyAgent created:', agent);
 } catch (error) {
-    console.error('Error creating HttpProxyAgent:', error.message);
+    console.error('Error creating HttpsProxyAgent:', error.message);
     // Fallback to no proxy or exit if agent creation fails
     agent = null;
 }
