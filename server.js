@@ -76,6 +76,10 @@ app.post('/api/get-event-data', async (req, res) => {
             console.log("Set up proxy authentication.");
         }
 
+        // Set a realistic viewport to make the browser look more human
+        await page.setViewport({ width: 1920, height: 1080 });
+        console.log("Set viewport to 1920x1080.");
+
         // Warm up the browser by visiting the homepage to get session cookies
         console.log("Warming up browser by visiting the homepage...");
         await page.goto('https://www.ticketmaster.nl/', { waitUntil: 'domcontentloaded' });
