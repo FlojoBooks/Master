@@ -82,7 +82,7 @@ app.post('/api/get-event-data', async (req, res) => {
 
         // Warm up the browser by visiting the homepage to get session cookies
         console.log("Warming up browser by visiting the homepage...");
-        await page.goto('https://www.ticketmaster.nl/', { waitUntil: 'domcontentloaded' });
+        await page.goto('https://www.ticketmaster.nl/event/avond-van-de-filmmuziek-tickets/3001', { waitUntil: 'domcontentloaded' });
         console.log("Homepage visited. Necessary session cookies should be set.");
 
         // Go to the API URL
