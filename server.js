@@ -9,6 +9,7 @@ const { HttpsProxyAgent } = require('https-proxy-agent');
 
 // IMPORTANT: Replace with your actual proxy URL
 const PROXY_SERVER = process.env.PROXY_SERVER || 'http://your.proxy.server:port'; 
+console.log('Server using proxy:', PROXY_SERVER);
 const agent = new HttpsProxyAgent(PROXY_SERVER);
 
 const app = express();
