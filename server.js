@@ -76,15 +76,10 @@ app.post('/api/get-event-data', async (req, res) => {
             console.log("Set up proxy authentication.");
         }
 
-        // Set the cookies for the .ticketmaster.nl domain
-        if (cookieString) {
-            const cookieObjects = cookieString.split(';').map(c => {
-                const [name, ...valueParts] = c.trim().split('=');
-                return { name, value: valueParts.join('='), domain: '.ticketmaster.nl' };
-            });
-            await page.setCookie(...cookieObjects);
-            console.log(`Set ${cookieObjects.length} cookies.`);
-        }
+        // Warm up the browser by visiting the homepage to get session cookies
+        console.log("Warming up browser by visiting the homepage...");
+        await page.goto('https://www.ticketmaster.nl/', { waitUntil: 'domcontentloaded' });
+        console.log("Homepage visited. Necessary session cookies should be set.");
 
         // Go to the API URL
         console.log(`Navigating to: ${apiUrl}`);
