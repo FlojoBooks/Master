@@ -127,6 +127,7 @@ function App() {
     console.log('App.jsx: Sending GET_TM_COOKIE message to extension...');
     try {
       const response = await chrome.runtime.sendMessage('fnkklcbipplidfliidenikiblcnbdffj', { type: 'GET_TM_COOKIE', source: 'ticketmaster-dashboard' });
+      console.log('App.jsx: Response from extension:', response);
       if (response.success) {
         cookie = response.cookieString;
       } else {
@@ -138,11 +139,13 @@ function App() {
       return;
     }
 
+    console.log('App.jsx: Cookie value before fetch:', cookie);
+
     try {
       const res = await fetch('/api/get-event-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventUrl, cookie })
+        body: JSON.stringify({ eventUrl, cookieString: cookie })
       })
       if (!res.ok) {
         const err = await res.json().catch(() => null)
