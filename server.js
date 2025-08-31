@@ -43,7 +43,14 @@ app.post('/api/get-event-data', async (req, res) => {
     let browser = null;
     try {
         console.log(`Received Event ID: ${eventId}`);
-        console.log(`Using proxy: ${PROXY_SERVER}`);
+        
+        // 1. Parse the proxy URL to separate auth from the host
+        const proxyUrl = new URL(PROXY_SERVER);
+        const proxyHost = `${proxyUrl.hostname}:${proxyUrl.port}`;
+        const proxyUsername = proxyUrl.username;
+        const proxyPassword = proxyUrl.password;
+
+        console.log(`Using proxy host: ${proxyHost}`);
 
         // Build the API URL
         const apiUrl = `https://availability.ticketmaster.nl/api/v2/TM_NL/availability/${eventId}?subChannelId=1`;
@@ -51,15 +58,21 @@ app.post('/api/get-event-data', async (req, res) => {
         console.log("Launching Puppeteer to fetch API data...");
         browser = await puppeteer.launch({
             headless: true,
-            // IMPORTANT: The proxy URL must be valid for this to work.
             args: [
-                `--proxy-server=${PROXY_SERVER}`,
+                // 2. Provide the proxy host WITHOUT authentication
+                `--proxy-server=${proxyHost}`,
                 '--no-sandbox',
                 '--disable-setuid-sandbox'
             ]
         });
 
         const page = await browser.newPage();
+
+        // 3. Set up authentication
+        if (proxyUsername && proxyPassword) {
+            await page.authenticate({ username: proxyUsername, password: proxyPassword });
+            console.log("Set up proxy authentication.");
+        }
 
         // Set the cookies for the .ticketmaster.nl domain
         if (cookieString) {
@@ -79,13 +92,11 @@ app.post('/api/get-event-data', async (req, res) => {
              throw new Error(`Puppeteer received non-ok response: ${response.status()} ${response.statusText()}`);
         }
 
-        // The response from the API is JSON, which the browser will display as text.
         const jsonContent = await page.evaluate(() => document.body.innerText);
         
-        // Check for common API error messages in the response body
         if (jsonContent.includes('Forbidden') || jsonContent.includes('blocked')) {
             console.error("API response indicates a block:", jsonContent);
-            throw new Error('The request was blocked by the API, likely due to fingerprinting or a bad cookie/proxy.');
+            throw new Error('The request was blocked by the API.');
         }
 
         const data = JSON.parse(jsonContent);
