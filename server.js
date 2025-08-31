@@ -4,6 +4,8 @@ const path = require('path');
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
+const AnonymizeUAPlugin = require('puppeteer-extra-plugin-anonymize-ua');
+puppeteer.use(AnonymizeUAPlugin());
 const fetch = require('node-fetch');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 

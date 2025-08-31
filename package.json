@@ -21,7 +21,9 @@
     "node-fetch": "^2.7.0",
     "puppeteer": "^24.17.1",
     "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2"
+    "puppeteer-extra-plugin-anonymize-ua": "^2.4.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "undici": "^7.15.0"
   },
   "devDependencies": {
     "concurrently": "^9.0.1",
