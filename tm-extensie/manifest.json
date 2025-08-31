@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Ticketmaster Data Assistent",
-  "version": "1.0",
+  "version": "1.0.0",
   "description": "Haalt eventinformatie en cookies op voor het Ticketmaster Dashboard.",
   "permissions": [
     "cookies",
@@ -13,17 +13,11 @@
   "background": {
     "service_worker": "background.js"
   },
-  "content_scripts": [
-    {
-      "matches": ["*://*.ticketmaster.nl/*"],
-      "js": ["content.js"],
-      "run_at": "document_idle"
-    }
-  ],
   "externally_connectable": {
     "matches": [
-      "http://localhost:3000/*",
-      "https://master-production-a5a2.up.railway.app/*"
+      "http://localhost:*/*",
+      "http://127.0.0.1:*/*",
+      "https://*/*"
     ]
   }
 }

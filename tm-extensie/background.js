@@ -1,45 +1,34 @@
-// background.js - De Worker
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log('Background.js: Received message:', request);
-  // Luister naar berichten van de webapplicatie
-  if (request.type === 'GET_EVENT_DATA' && request.eventUrl) {
-    // Bestaande logica voor het ophalen van event data
-    // ...
-  } else if (request.type === 'GET_TM_COOKIE') {
+// background.js
+console.log("Ticketmaster Data Assistent Service Worker started.");
+
+chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => {
+  console.log("Received EXTERNAL message:", request, "from", sender.origin || sender.url || "(unknown origin)");
+
+  if (request.type === 'GET_TM_COOKIE') {
     (async () => {
       try {
         const cookies = await chrome.cookies.getAll({ domain: ".ticketmaster.nl" });
         const cookieString = cookies.map(c => `${c.name}=${c.value}`).join('; ');
-
         sendResponse({ success: true, cookieString });
         console.log('Background.js: Sending TM_COOKIE_RESPONSE with success.');
       } catch (error) {
+        console.error("Error retrieving cookies:", error);
         sendResponse({ success: false, error: error.message });
       }
     })();
-    return true; // Houdt de message port open voor het asynchrone antwoord
+    return true; // Keep the message port open for the asynchronous response
   }
 
-  // Luister alleen naar berichten met het type 'GET_EVENT_DATA'
-  if (request.type === 'GET_EVENT_DATA' && request.eventUrl) {
-    // Start het asynchrone proces en geef aan dat we later antwoorden
-    (async () => {
-      try {
-        const { eventInfo, cookieString, eventId } = await fetchEventData(request.eventUrl);
-        sendResponse({ success: true, eventInfo, cookieString, eventId });
-      } catch (error) {
-        sendResponse({ success: false, error: error.message });
-      }
-    })();
-    return true; // Houdt de message port open voor het asynchrone antwoord
-  }
+  // If no handler matches, ensure the message port is closed
+  // by not returning true, or explicitly returning false.
+  // However, for async responses, returning true is essential.
+  // If no async response is intended, no return is needed.
 });
 
-/**
- * Voert het volledige scrape- en fetch-proces uit.
- * @param {string} eventUrl De URL van het evenement.
- * @returns {Promise<object>} Een object met eventInfo en availabilityData.
- */
+// Original fetchEventData and scrapePageContent functions (if still needed)
+// These functions were part of the original background.js for scraping event data.
+// If the web app will still send 'GET_EVENT_DATA' requests, uncomment and integrate.
+/*
 async function fetchEventData(eventUrl) {
   // Stap 1: Open de pagina in een nieuw, inactief tabblad
   const tab = await chrome.tabs.create({ url: eventUrl, active: false });
@@ -68,7 +57,6 @@ async function fetchEventData(eventUrl) {
     // Stap 3: Haal de cookies op voor het Ticketmaster domein
     const cookies = await chrome.cookies.getAll({ domain: ".ticketmaster.nl" });
     const cookieString = cookies.map(c => `${c.name}=${c.value}`).join('; ');
-    if (cookieString.length < 200) throw new Error("Onvolledige cookie ontvangen. Anti-bot is mogelijk actief.");
 
     // Stap 4: Haal de Event ID uit de URL
     const eventId = (eventUrl.match(/(\d+)(?!.*\d)/) || [])[0];
@@ -83,9 +71,6 @@ async function fetchEventData(eventUrl) {
   }
 }
 
-/**
- * Deze functie wordt IN de Ticketmaster-pagina geïnjecteerd om de data te lezen.
- */
 function scrapePageContent() {
   const titleElement = document.querySelector('h1.event-header__title');
   const venueElement = document.querySelector('a[data-testid="venue-name"]');
@@ -96,3 +81,4 @@ function scrapePageContent() {
     date: dateElement ? dateElement.innerText : 'Datum niet gevonden',
   };
 }
+*/

@@ -122,6 +122,8 @@ function App() {
     setLoading(true)
     setError('')
 
+    let cookie; // Declare cookie here
+
     console.log('App.jsx: Sending GET_TM_COOKIE message to extension...');
     try {
       const response = await chrome.runtime.sendMessage('fnkklcbipplidfliidenikiblcnbdffj', { type: 'GET_TM_COOKIE', source: 'ticketmaster-dashboard' });
