@@ -5,13 +5,12 @@ const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
 const fetch = require('node-fetch');
-const { HttpsProxyAgent } = require('https-proxy-agent');
+const { HttpProxyAgent } = require('https-proxy-agent');
 
 // IMPORTANT: Replace with your actual proxy URL
 const PROXY_SERVER = process.env.PROXY_SERVER || 'http://your.proxy.server:port'; 
 console.log('Server using proxy:', PROXY_SERVER);
-const agent = new HttpsProxyAgent(PROXY_SERVER);
-console.log('HttpsProxyAgent created:', agent);
+const agent = new HttpProxyAgent(PROXY_SERVER);
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -43,6 +42,7 @@ app.post('/api/get-event-data', async (req, res) => {
 
         // Make the API request with the provided cookie.
         console.log("Making API request with provided cookie...");
+        console.log('Fetching with agent:', agent);
         const apiResponse = await fetch(apiUrl, {
             agent: agent, // Use the proxy agent
             headers: {
